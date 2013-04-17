@@ -14,36 +14,42 @@ class GittuCM( QtCore.QObject ):
     @QtCore.Slot()
     def quitMe(self):
         sys.exit()
+        
+class dTypeView ( QtDeclarative.QDeclarativeView ):
+    def __init__( self, parent=None ):
+        super( dTypeView, self ).__init__( parent )
+        self.setSource( QtCore.QUrl.fromLocalFile( './Main.qml' ) )
+        self.setResizeMode( QtDeclarative.QDeclarativeView.SizeRootObjectToView )
+        self.gittuParent = parent
+        
+    @QtCore.Slot("QMouseEvent")
+    def mouseMoveEvent(self,event):
 
-class MainWindow( QtDeclarative.QDeclarativeView ):
+        print event.globalPos(), event.pos() 
+        if (event.buttons() & QtCore.Qt.LeftButton ):
+            self.gittuParent.move(event.globalPos() - self.dragpos )
+            event.accept()
+
+class MainWindow( QtGui.QMainWindow ):
     def __init__( self, parent=None ):
         super( MainWindow, self ).__init__( parent )
         self.setWindowTitle( "Test" )
-        #print self.mouseMove.connect
-        self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
-        self.setSource( QtCore.QUrl.fromLocalFile( './Main.qml' ) )
-        self.setResizeMode( QtDeclarative.QDeclarativeView.SizeRootObjectToView )
 
-    @QtCore.Slot("QMouseEvent")
-    def mouseMoveEvent(self,event):
-        ex = event.pos().x()
-        ey = event.pos().y()
-        gx = event.globalPos().x()
-        gy = event.globalPos().y()
-        # if (ex > 3):
-        #     self.lx = ex
-        #     self.ly = ey
-        #     print ex - gx , ey - gy
-        #     self.move(ex , ey )
-        # else:
-        #     self.move(gx , gy )
+        self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         
-        print event.globalPos(), event.pos() 
-        self.move(gx , gy )
+        self.dView = dTypeView(self)
+        
+        self.setCentralWidget(self.dView)
+        
+    @QtCore.Slot("QMouseEvent")
+    def mousePressEvent(self,event):
+        if (event.button() == QtCore.Qt.LeftButton):
+            self.dView.dragpos = event.globalPos() - self.frameGeometry().topLeft()
+
 
 app = QtGui.QApplication( sys.argv )
 window = MainWindow()
-context = window.rootContext()
+context = window.dView.rootContext()
 context.setContextProperty("GittuCM",GittuCM())
 window.show()
 sys.exit( app.exec_() )
